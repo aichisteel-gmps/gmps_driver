@@ -1,8 +1,8 @@
 #include <rclcpp/rclcpp.hpp>
 #include <chrono>
 #include <can_msgs/msg/frame.hpp>                               //in out can
-#include <gmps_msgs/msg/gmps_detect.hpp>                        //out 検知
-#include <gmps_msgs/msg/gmps_error.hpp>                         //out エラー
+#include <gmps_msgs_package/msg/gmps_detect.hpp>                        //out 検知
+#include <gmps_msgs_package/msg/gmps_error.hpp>                         //out エラー
 #include <geometry_msgs/msg/twist_with_covariance_stamped.hpp>  //in speed
 #include <std_msgs/msg/bool.hpp>                                //in soft reset
 
@@ -43,8 +43,8 @@ private://ros subscriber
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr sub_soft_reset_;                       //上位からのソフトリセット要求
 
 private://ros publisher
-    rclcpp::Publisher<gmps_msgs::msg::GmpsDetect>::SharedPtr pub_gmps_detect_;  //GMPSデバイスから取得した情報のpublisher
-    rclcpp::Publisher<gmps_msgs::msg::GmpsError>::SharedPtr pub_gmps_error_;    //GMPSデバイスからのエラー通知
+    rclcpp::Publisher<gmps_msgs_package::msg::GmpsDetect>::SharedPtr pub_gmps_detect_;  //GMPSデバイスから取得した情報のpublisher
+    rclcpp::Publisher<gmps_msgs_package::msg::GmpsError>::SharedPtr pub_gmps_error_;    //GMPSデバイスからのエラー通知
     rclcpp::Publisher<can_msgs::msg::Frame>::SharedPtr pub_can_frame_;          //To GMPS, can frame msg
 
 private://ros timer
@@ -65,7 +65,7 @@ private://GMPS用変数
     uint8_t ack_command_;   //GMPS_INPUT コマンド
     uint8_t ack_result_;    //コマンド結果
 
-private://arguments for publishCanFrame 
+private://arguments for publishCanFrame
     uint16_t out_can_id_;
     uint8_t out_dlc_;
     uint8_t out_data_[8];
@@ -142,10 +142,10 @@ private:
 
         case CANID_GMPS_INFO:
         {
-            uint16_t speed = (data[1]<<8) | data[0];
-            double speed_mps = 0.01*speed; // [m/s]
-            uint32_t run_dist = (data[2] | data[3]<<4 | data[4]<<8 | data[5]<<12);
-            double run_dist_m = 0.01 * run_dist;
+            //uint16_t speed = (data[1]<<8) | data[0];
+            //double speed_mps = 0.01*speed; // [m/s]
+            //uint32_t run_dist = (data[2] | data[3]<<4 | data[4]<<8 | data[5]<<12);
+            //double run_dist_m = 0.01 * run_dist;
             out_error_code_ = data[6];
             publishError();
             f_receive_info_ = true;
@@ -156,7 +156,7 @@ private:
         case CANID_GMPS_INPUT:
             /* do nothing */
             break;
-        
+
         case CANID_GMPS_SPEED:
             /* do nothing */
             break;
@@ -175,9 +175,9 @@ private:
         {
         case STEP1: //既に動いている可能性があるので停止要求
             if (f_receive_ack_ == false)
-            {		
+            {
                 elapsed_time_ = (get_clock()->now() - last_cmd_send_time_).seconds();
-                if (elapsed_time_ > 0.1) 
+                if (elapsed_time_ > 0.1)
                 {
                     out_can_id_ = CANID_GMPS_INPUT;
                     out_dlc_ = 2;
@@ -192,7 +192,7 @@ private:
             {
                 f_receive_ack_ = false;
                 if ((ack_command_ == CMD_STOP ) &&
-                    (ack_result_ == gmps_msgs::msg::GmpsError::OK))
+                    (ack_result_ == gmps_msgs_package::msg::GmpsError::OK))
                 {
                     state_ = STEP2;
                     RCLCPP_INFO(this->get_logger(), "ACK_OK. transition STEP1 -> STEP2");
@@ -204,7 +204,7 @@ private:
             if (f_receive_ack_ == false)
             {
                 elapsed_time_ = (get_clock()->now() - last_cmd_send_time_).seconds();
-                if (elapsed_time_ > 1.5) 
+                if (elapsed_time_ > 1.5)
                 {
                     out_can_id_ = CANID_GMPS_INPUT;
                     out_dlc_ = 2;
@@ -216,20 +216,20 @@ private:
                 }
             }
             else if (f_receive_ack_ == true)
-            {/
+            {
                 f_receive_ack_ = false;
                 if ((ack_command_ == CMD_SELFTEST ) &&
-                    (ack_result_ == gmps_msgs::msg::GmpsError::OK))
+                    (ack_result_ == gmps_msgs_package::msg::GmpsError::OK))
                 {
                     state_ = STEP3;
                     RCLCPP_INFO(this->get_logger(), "ACK_OK. transition STEP2 -> STEP3");
                 }
                 else if ((ack_command_ == CMD_SELFTEST ) &&
-                            ((ack_result_ == gmps_msgs::msg::GmpsError::ERR_GAIN_CHECK_FAIL) ||
-                                (ack_result_ == gmps_msgs::msg::GmpsError::ERR_NOISE_CHECK_FAIL) ||
-                                (ack_result_ == gmps_msgs::msg::GmpsError::ERR_SENSOR_VALUE_SATURATION) ||
-                                (ack_result_ == gmps_msgs::msg::GmpsError::ERR_SENSOR_COMM_FAIL) ||
-                                (ack_result_ == gmps_msgs::msg::GmpsError::ERR_SENSOR_INIT_FAIL)  ))
+                            ((ack_result_ == gmps_msgs_package::msg::GmpsError::ERR_GAIN_CHECK_FAIL) ||
+                                (ack_result_ == gmps_msgs_package::msg::GmpsError::ERR_NOISE_CHECK_FAIL) ||
+                                (ack_result_ == gmps_msgs_package::msg::GmpsError::ERR_SENSOR_VALUE_SATURATION) ||
+                                (ack_result_ == gmps_msgs_package::msg::GmpsError::ERR_SENSOR_COMM_FAIL) ||
+                                (ack_result_ == gmps_msgs_package::msg::GmpsError::ERR_SENSOR_INIT_FAIL)  ))
                 {
                     state_ = SYSTEMFAIL;
                     RCLCPP_ERROR(this->get_logger(), "SELFTEST fail at STEP2");
@@ -237,12 +237,12 @@ private:
                 }
             }
             break;
-        
+
         case STEP3: //測定開始指示
             if (f_receive_ack_ == false)
             {
                 elapsed_time_ = (get_clock()->now() - last_cmd_send_time_).seconds();
-                if (elapsed_time_ > 0.1) 
+                if (elapsed_time_ > 0.1)
                 {
                     out_can_id_ = CANID_GMPS_INPUT;
                     out_dlc_ = 2;
@@ -257,8 +257,8 @@ private:
             {
                 f_receive_ack_ = false;
                 if ((ack_command_ == CMD_START ) &&
-                    ((ack_result_ == gmps_msgs::msg::GmpsError::OK) ||
-                        (ack_result_ == gmps_msgs::msg::GmpsError::ERR_DURING_MEASUREMENT))) 
+                    ((ack_result_ == gmps_msgs_package::msg::GmpsError::OK) ||
+                        (ack_result_ == gmps_msgs_package::msg::GmpsError::ERR_DURING_MEASUREMENT)))
                 {
                     state_ = STEP4;
                     last_received_time_ = get_clock()->now(); //watchdogのリセット
@@ -266,11 +266,11 @@ private:
                     RCLCPP_INFO(this->get_logger(), "GMPS is ready to detect magnetic markers.");
                 }
                 else if ((ack_command_ == CMD_START ) &&
-                            ((ack_result_ == gmps_msgs::msg::GmpsError::ERR_GAIN_CHECK_FAIL) ||
-                                (ack_result_ == gmps_msgs::msg::GmpsError::ERR_NOISE_CHECK_FAIL) ||
-                                (ack_result_ == gmps_msgs::msg::GmpsError::ERR_SENSOR_VALUE_SATURATION) ||
-                                (ack_result_ == gmps_msgs::msg::GmpsError::ERR_SENSOR_COMM_FAIL) ||
-                                (ack_result_ == gmps_msgs::msg::GmpsError::ERR_SENSOR_INIT_FAIL)  ))
+                            ((ack_result_ == gmps_msgs_package::msg::GmpsError::ERR_GAIN_CHECK_FAIL) ||
+                                (ack_result_ == gmps_msgs_package::msg::GmpsError::ERR_NOISE_CHECK_FAIL) ||
+                                (ack_result_ == gmps_msgs_package::msg::GmpsError::ERR_SENSOR_VALUE_SATURATION) ||
+                                (ack_result_ == gmps_msgs_package::msg::GmpsError::ERR_SENSOR_COMM_FAIL) ||
+                                (ack_result_ == gmps_msgs_package::msg::GmpsError::ERR_SENSOR_INIT_FAIL)  ))
                 {
                     state_ = SYSTEMFAIL;
                     RCLCPP_ERROR(this->get_logger(), "START fail at STEP3");
@@ -278,13 +278,13 @@ private:
                 }
             }
             break;
-        
+
         case STEP4: //測定中
             //watchdog
             elapsed_time_ = (get_clock()->now() - last_received_time_).seconds();
             if (elapsed_time_ > param_watchdog_timeout_)
             {
-                out_error_code_ = gmps_msgs::msg::GmpsError::ERR_WATCHDOG_TIMEOUT;
+                out_error_code_ = gmps_msgs_package::msg::GmpsError::ERR_WATCHDOG_TIMEOUT;
                 publishError();
                 RCLCPP_ERROR(this->get_logger(), "ERR: watchdog timeout. elapsed time from last receive is %f", elapsed_time_);
 
@@ -293,17 +293,17 @@ private:
             }
 
             //GMPS_INFOのエラーコード
-            if (f_receive_info_ == true) 
+            if (f_receive_info_ == true)
             {
                 f_receive_info_ = false;
-                if (out_error_code_ != gmps_msgs::msg::GmpsError::OK)
+                if (out_error_code_ != gmps_msgs_package::msg::GmpsError::OK)
                 {
                     state_ = SYSTEMFAIL;
                     RCLCPP_ERROR(this->get_logger(), "ERR: some error has occurred during measuring.");
                     RCLCPP_INFO(this->get_logger(), "transition STEP4 -> SYSTEMFAIL");
                 }
             }
-            
+
             break;
 
         case STEP101: //オフセットサーチ要求
@@ -325,14 +325,14 @@ private:
             {
                 f_receive_ack_ = false;
                 if ((ack_command_ == CMD_OFFSETSEARCH ) &&
-                    (ack_result_ == gmps_msgs::msg::GmpsError::OK))
+                    (ack_result_ == gmps_msgs_package::msg::GmpsError::OK))
                 {
                     state_ = STEP102;
                     RCLCPP_INFO(this->get_logger(), "OFFSET_SEARCH was acknowledged.");
                     RCLCPP_INFO(this->get_logger(), "transition STEP101 -> STEP102");
                 }
                 else if ((ack_command_ == CMD_OFFSETSEARCH ) &&
-                            (ack_result_ == gmps_msgs::msg::GmpsError::ERR_SEARCH_OFFSET_FAIL))
+                            (ack_result_ == gmps_msgs_package::msg::GmpsError::ERR_SEARCH_OFFSET_FAIL))
                 {
                     state_ = SYSTEMFAIL;
                     RCLCPP_ERROR(this->get_logger(), "ERR: OFFSET_SEARCH fails. there must be significant magnetic noise around here.");
@@ -361,14 +361,14 @@ private:
             {
                 f_receive_ack_ = false;
                 if ((ack_command_ == CMD_OFFSETWRITE ) &&
-                    (ack_result_ == gmps_msgs::msg::GmpsError::OK))
+                    (ack_result_ == gmps_msgs_package::msg::GmpsError::OK))
                 {
                     state_ = STEP103;
                     RCLCPP_INFO(this->get_logger(), "OFFSET_WRITE_EEP was acknowledged.");
                     RCLCPP_INFO(this->get_logger(), "transition STEP102 -> STEP103");
                 }
                 else if ((ack_command_ == CMD_OFFSETWRITE ) &&
-                            (ack_result_ != gmps_msgs::msg::GmpsError::OK))
+                            (ack_result_ != gmps_msgs_package::msg::GmpsError::OK))
                 {
                     state_ = SYSTEMFAIL;
                     RCLCPP_ERROR(this->get_logger(), "OFFSET_WRITE_EEP fails. this indicates that some FATAL ERROR has occurred to GMPS.");
@@ -377,7 +377,7 @@ private:
                 }
             }
             break;
-        
+
         case STEP103: //require reboot
             elapsed_time_ = (get_clock()->now() - last_cmd_send_time_).seconds();
             if (elapsed_time_ > 5.0)
@@ -406,7 +406,7 @@ private:
             {
                 f_receive_ack_ = false;
                 if ((ack_command_ == CMD_SOFTRESET ) &&
-                    (ack_result_ == gmps_msgs::msg::GmpsError::OK))
+                    (ack_result_ == gmps_msgs_package::msg::GmpsError::OK))
                 {
                     state_ = STEP1;
                     RCLCPP_INFO(this->get_logger(), "SOFTRESET was acknowledged.");
@@ -421,7 +421,7 @@ private:
 
         case SYSTEMFAIL:
             //RCLCPP_ERROR(this->get_logger(), "GMPS SYSTEM FAIL. Please reboot system and this node");
-            out_error_code_ = gmps_msgs::msg::GmpsError::ERR_SYSTEM_FAIL;
+            out_error_code_ = gmps_msgs_package::msg::GmpsError::ERR_SYSTEM_FAIL;
             publishError();
             //std::this_thread::sleep_for(std::chrono::milliseconds(5000));
             break;
@@ -456,11 +456,11 @@ private:
     //publish gmps_detect
     void publishDetect()
     {
-        gmps_msgs::msg::GmpsDetect msg_detect;
+        gmps_msgs_package::msg::GmpsDetect msg_detect;
         msg_detect.header.frame_id = "gmps";
         msg_detect.header.stamp = detect_stamp_;
         msg_detect.counter = out_counter_;
-        msg_detect.lateral_deviation = out_lateral_deviation_; 
+        msg_detect.lateral_deviation = out_lateral_deviation_;
         msg_detect.pole = out_pole_;
         msg_detect.mm_kind = out_mm_kind_; //not used
         msg_detect.delay_dist = param_delay_dist_; //param
@@ -471,7 +471,7 @@ private:
     //publish gmps_error
     void publishError()
     {
-        gmps_msgs::msg::GmpsError error;
+        gmps_msgs_package::msg::GmpsError error;
         error.header.frame_id = "gmps";
         error.header.stamp = get_clock()->now();
         error.error_code = out_error_code_;
@@ -482,17 +482,13 @@ private:
 public:
     GMPSDriver(const rclcpp::NodeOptions &node_option)
         : rclcpp::Node("gmps_driver", node_option)
+        , param_offset_search_mode_(declare_parameter<bool>("offset_search_mode", false))
+        , param_delay_dist_(declare_parameter<double>("delay_dist", 0.1))
+        , param_watchdog_timeout_(declare_parameter<double>("watchdog_timeout", 0.5))
         , f_receive_ack_(false)
         , f_receive_info_(false)
     {
         RCLCPP_INFO(this->get_logger(), "constructor called");
-        /* Parameter */
-        this->declare_parameter<bool>("offset_search_mode", "false");
-        this->declare_parameter<double>("delay_dist", 0.1);
-        this->declare_parameter<double>("watchdog_timeout", 0.5);
-        param_offset_search_mode_ = this->get_parameter("offset_search_mode").as_bool();
-        param_delay_dist_ = this->get_parameter("delay_dist").as_double();
-        param_watchdog_timeout_ = this->get_parameter("watchdog_timeout").as_double();
 
         /* Subscriber */
         sub_can_frame_ = this->create_subscription<can_msgs::msg::Frame>(
@@ -503,13 +499,13 @@ public:
             "in_soft_reset", rclcpp::QoS(1), std::bind(&GMPSDriver::callbackSoftReset, this, std::placeholders::_1));
 
         /* Publisher */
-        pub_gmps_detect_ = this->create_publisher<gmps_msgs::msg::GmpsDetect>("out_gmps_detect", rclcpp::QoS(1));
-        pub_gmps_error_ = this->create_publisher<gmps_msgs::msg::GmpsError>("out_gmps_error", rclcpp::QoS(1));
+        pub_gmps_detect_ = this->create_publisher<gmps_msgs_package::msg::GmpsDetect>("out_gmps_detect", rclcpp::QoS(1));
+        pub_gmps_error_ = this->create_publisher<gmps_msgs_package::msg::GmpsError>("out_gmps_error", rclcpp::QoS(1));
         pub_can_frame_ = this->create_publisher<can_msgs::msg::Frame>("out_gmps_can_frame", rclcpp::QoS(1));
 
         /* Timer */
         state_timer_ = rclcpp::create_timer(this, get_clock(), rclcpp::Rate(20).period(), std::bind(&GMPSDriver::callbackTimer, this));
-        
+
         if (param_offset_search_mode_ == true)
         {
             RCLCPP_INFO(this->get_logger(), "begin offset_search sequence");
@@ -528,7 +524,14 @@ int main(int argc, char** argv)
 {
     rclcpp::init(argc, argv);
     rclcpp::NodeOptions option;
-    auto node = std::make_shared<GMPSDriver>(option);
+    std::shared_ptr<GMPSDriver> node;
+    try{//メンバ初期化リスト(コンストラクタ宣言と中括弧の間の記述)で例外がthrowされた場合のtry-catch
+        node = std::make_shared<GMPSDriver>(option);
+    } catch(std::runtime_error &e) {//ros2の例外型の継承元クラスはstd::runtime_error
+		RCLCPP_ERROR_STREAM(rclcpp::get_logger("gmps_localizer"), e.what());
+		return -1;
+	}
+
     rclcpp::spin(node);
     rclcpp::shutdown();
     return 0;
