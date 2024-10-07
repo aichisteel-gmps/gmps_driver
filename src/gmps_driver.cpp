@@ -55,9 +55,9 @@ private://ros timer
     double elapsed_time_;                                   //最後に受信してからの経過時間
 
 private://parameters
-    bool param_offset_search_mode_; //OFFSET_SEARCH実行モード
-    double param_delay_dist_;       //検知遅れ距離 [m]
-    double param_watchdog_timeout_; //GMPS_INFOによるウォッチドッグのタイムアウト時間[s]
+    const bool param_offset_search_mode_; //OFFSET_SEARCH実行モード
+    const double param_delay_dist_;       //検知遅れ距離 [m]
+    const double param_watchdog_timeout_; //GMPS_INFOによるウォッチドッグのタイムアウト時間[s]
 
 private://GMPS用変数
     bool f_receive_ack_;    //GMPS_ACKを受信したフラグ
