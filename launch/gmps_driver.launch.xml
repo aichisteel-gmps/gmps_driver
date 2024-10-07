@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
   <!-- param -->
-  <arg name="param_file" default="$(find-pkg-share gmps_driver_package)/config/gmsp_driver.param.yaml"/>
+  <arg name="param_file" default="$(find-pkg-share gmps_driver)/config/gmsp_driver.param.yaml"/>
 
   <!-- topic name -->
   <arg name="in_velocity_name" default="/velocity"/>
@@ -11,7 +11,7 @@
   <arg name="out_gmps_detect_name" default="/gmps_detect"/>
   <arg name="out_gmps_error_name" default="/gmps_error"/>
 
-  <node pkg="gmps_driver_package" exec="gmps_driver" name="gmps_driver" output="log" >
+  <node pkg="gmps_driver" exec="gmps_driver" name="gmps_driver" output="log" >
     <param from="$(var param_file)"/>
 
     <remap from="in_velocity" to="$(var in_velocity_name)"/>
